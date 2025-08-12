@@ -1,0 +1,1992 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تایمر و پخش‌کننده موسیقی</title>
+    <style>
+        /* Base styles for responsiveness */
+        html {
+            font-size: 16px; /* Base font size for rem units */
+        }
+
+        body {
+            direction: rtl;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column; /* Changed to column to accommodate header */
+            align-items: center; /* Center items horizontally */
+            min-height: 100vh;
+            background-color: #2c3e50; /* Dark blue/grey background */
+            margin: 0;
+            color: #ecf0f1; /* Light text color */
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        /* Top Navigation/Tabs */
+        .top-nav {
+            width: 100%;
+            background-color: #34495e;
+            padding: 0.8rem 0;
+            box-shadow: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: center;
+            gap: 2rem; /* Space between tabs */
+            margin-bottom: 2rem; /* Space below nav */
+        }
+
+        .top-nav a {
+            color: #ecf0f1;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 0.3rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .top-nav a:hover {
+            background-color: #4a627a;
+        }
+
+        .top-nav a.active {
+            color: #2ecc71; /* Active tab color */
+            border-bottom: 0.2rem solid #2ecc71;
+            background-color: #4a627a;
+        }
+
+        /* Universal Container Styles - ensures both containers are the same size */
+        .container {
+            background-color: #34495e; /* Slightly lighter dark blue for container */
+            padding: 2.5rem; /* ~40px */
+            border-radius: 0.8rem; /* ~12px */
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.3); /* ~8px 16px */
+            text-align: center;
+            width: 90vw; /* Responsive width */
+            max-width: 400px; /* Max width for larger screens - This is the key for consistent side margins */
+            box-sizing: border-box; /* Include padding in width */
+            display: none; /* All containers are hidden by default */
+            margin-bottom: 2rem; /* Add some margin at the bottom of containers */
+        }
+
+        /* Active Container Styles - show when active */
+        .container.active {
+            display: block; /* Explicitly show active containers by default */
+        }
+
+        /* Home Container Specific Styles (when active) - override to flex */
+        #home-container.active { /* Apply flexbox only when home-container is active */
+            display: flex; /* Flexbox for column layout */
+            flex-direction: column;
+            justify-content: center; /* Center items vertically */
+            align-items: center;
+            gap: 1.5rem; /* Space between buttons */
+        }
+
+        /* Mafia Setup Container Specific Styles - override to flex */
+        #mafia-setup-container.active,
+        #secret-army-setup-container.active,
+        #last-action-container.active,
+        #music-container.active,
+        #timer-container.active { /* Apply to all setup containers and main tabs */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem; /* Space between sections */
+            max-width: 900px; /* Wider for 4 columns */
+            width: 95vw;
+            padding: 2rem;
+        }
+
+        /* Specific override for last-action-container to fill more width */
+        #last-action-container.active {
+            max-width: 600px; /* Adjust this value to make buttons larger and fill more of the screen */
+            padding: 1.5rem; /* Slightly less padding to maximize button space */
+            gap: 1.5rem; /* Gap between h2 and gallery */
+        }
+
+
+        .card-selection-section {
+            width: 100%;
+            text-align: right;
+        }
+
+        .card-selection-section h3,
+        #last-action-container h2 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+            color: #2ecc71;
+        }
+
+        .card-gallery {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* Default 4 columns for larger screens */
+            gap: 0.5rem; /* Adjusted gap for closer cards */
+            width: 100%;
+            justify-items: center;
+        }
+        
+        /* OVERRIDE for final-move-buttons-gallery */
+        #final-move-buttons-gallery {
+            grid-template-columns: repeat(2, 1fr); /* Two columns for last action buttons */
+            gap: 0.8rem; /* Smaller gap between large buttons */
+            width: 100%; /* Ensure it fills its parent container */
+        }
+
+
+        .card-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.3rem; /* Adjusted gap inside card item */
+            background-color: #4a627a;
+            border-radius: 0.5rem;
+            padding: 0.3rem; /* Adjusted padding */
+            box-shadow: 0 0.15rem 0.3rem rgba(0, 0, 0, 0.2);
+            cursor: pointer; /* Indicate clickable */
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border 0.2s ease;
+            border: 3px solid transparent; /* Default transparent border */
+            box-sizing: border-box; /* Include border in size calculation */
+        }
+
+        .card-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0.3rem 0.6rem rgba(0, 0, 0, 0.3);
+        }
+
+        /* Style for selected cards - green border */
+        .card-item.selected {
+            border: 3px solid #2ecc71; /* Green border for selected cards */
+        }
+
+        .card-item img {
+            width: 100%; /* Make image fill card item */
+            max-width: 120px; /* Max size for card image */
+            height: auto;
+            border-radius: 0.3rem;
+            object-fit: contain; /* Ensure image fits without cropping */
+            display: block; /* Remove extra space below image */
+        }
+        
+        /* Specific styles for Final Move Buttons */
+        .final-move-button {
+            font-size: 5rem; /* MUCH Larger font for numbers */
+            font-weight: bold;
+            background-color: #f39c12; /* Yellow-orange color for buttons */
+            color: #2c3e50; /* Dark text */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            aspect-ratio: 1 / 1; /* Make it square */
+            padding: 0; /* Remove padding to make numbers larger within box */
+            box-shadow: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.3); /* Add shadow */
+            width: 100%; /* Ensure button fills its grid cell */
+            height: auto; /* Allow height to adjust based on width and aspect ratio */
+        }
+        .final-move-button:hover {
+            background-color: #e67e22; /* Darker orange on hover */
+            transform: translateY(-3px);
+        }
+
+        .start-game-button, .display-card-button {
+            background-color: #3498db; /* Blue color for start game */
+            padding: 1.5rem 3.5rem;
+            border-radius: 2.5rem;
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bolder;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.2);
+            width: 80%;
+            max-width: 300px;
+            margin-top: 2rem; /* Space above the button */
+        }
+
+        .start-game-button:hover, .display-card-button:hover {
+            background-color: #2980b9;
+            transform: translateY(-3px);
+        }
+
+        /* Card Display Overlay Styles (New and standalone) */
+        #card-display-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw; /* Full width of viewport */
+            height: 100vh; /* Full height of viewport */
+            background-color: rgba(0, 0, 0, 0.95); /* Darker overlay for better contrast */
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Center vertically */
+            align-items: center;
+            z-index: 1000; /* Ensure it's on top */
+            gap: 2rem; /* Space between card and button */
+            padding: 1rem; /* Padding for overall overlay content */
+            box-sizing: border-box;
+        }
+
+        #card-display-overlay.hidden {
+            display: none;
+        }
+
+        #card-display-overlay .card-wrapper {
+            position: relative;
+            /* **MODIFIED**: Maximize card size to fill more of the screen */
+            width: min(95vh * 0.7, 95vw); /* Card width based on 95% of viewport height * aspect, or 95% of viewport width */
+            height: min(95vh, 95vw / 0.7); /* Card height based on 95% of viewport height, or 95% of viewport width / aspect */
+            
+            /* Add explicit max dimensions for very large screens to prevent extreme size */
+            max-width: 600px; /* Maximum physical width of the card */
+            max-height: 840px; /* Maximum physical height of the card (600 * 1.4) */
+            
+            aspect-ratio: 1 / 1.4; /* Explicit aspect ratio for standard cards (width / height) */
+            
+            /* For flip effect */
+            perspective: 1000px; /* Gives the 3D perspective for the flip */
+            transform-style: preserve-3d; /* Ensures children (faces) participate in 3D space */
+        }
+
+        #card-display-overlay .card-wrapper > * {
+            flex-shrink: 0; /* Prevent card faces from shrinking */
+        }
+
+        #card-display-overlay .card-face {
+            position: absolute; /* Crucial for layering and full coverage within wrapper */
+            width: 100%;
+            height: 100%;
+            border-radius: 0.8rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+
+            background-size: contain; /* Ensure the entire image fits */
+            background-position: center; /* Center the image */
+            background-repeat: no-repeat; /* Do not repeat the image */
+            background-color: transparent; /* No background color behind the image */
+            
+            /* Flip effect properties */
+            backface-visibility: hidden; /* Hides the back of the element when flipped */
+            transition: transform 0.6s ease-in-out; /* Smooth transition for the flip */
+        }
+
+        #card-display-overlay .card-front {
+            transform: rotateY(180deg); /* Start rotated, so it's hidden initially */
+            z-index: 1; /* Front is above back */
+        }
+
+        #card-display-overlay .card-back {
+            transform: rotateY(0deg); /* Start visible */
+            z-index: 2; /* Back is below front, but starts visible */
+        }
+        
+        /* When card is flipped, reveal front and hide back */
+        #card-display-overlay .card-wrapper.flipped .card-front {
+            transform: rotateY(0deg); /* Show front face */
+        }
+        #card-display-overlay .card-wrapper.flipped .card-back {
+            transform: rotateY(-180deg); /* Flip back face away */
+        }
+
+        .display-card-button {
+            z-index: 1001; /* Ensure button is above the card overlay */
+        }
+        #hide-card-overlay-btn {
+            display: none; /* Hide by default */
+        }
+
+        /* Music Container Specific Styles (when active) */
+        #music-container.active {
+            position: relative; /* Crucial for positioning absolute children */
+        }
+        /* New styles for add music button */
+        #add-music-btn {
+            position: absolute;
+            top: 2rem; /* Adjust as needed for desired vertical position */
+            left: 2rem; /* Position it on the left side */
+            background-color: #27ae60; /* Green color */
+            color: white;
+            border: none;
+            border-radius: 0.5rem; /* Slightly rounded corners */
+            cursor: pointer;
+            z-index: 10; /* Ensure it's above other elements */
+            
+            /* Make it slightly larger and compact */
+            padding: 0.8rem 1.5rem; /* Adjust padding for size */
+            font-size: 1.1rem; /* Adjust font size */
+            font-weight: bold;
+            box-shadow: 0 0.15rem 0.3rem rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            
+            /* Reset button specific styles from .main-play-button */
+            width: auto; /* Allow width to be determined by content + padding */
+            max-width: none; /* No max-width restriction */
+            margin-top: 0; /* No top margin */
+        }
+
+        #add-music-btn:hover {
+            background-color: #219d54; /* Darker green on hover */
+            transform: translateY(-2px); /* Slight lift on hover */
+        }
+        
+        /* Adjust for smaller screens if needed */
+        @media (max-width: 480px) {
+            #add-music-btn {
+                top: 1rem; /* Closer to top on small screens */
+                left: 1rem; /* Closer to left on small screens */
+                padding: 0.6rem 1rem; /* Smaller padding on small screens */
+                font-size: 0.9rem; /* Smaller font on small screens */
+            }
+        }
+
+        /* Timer Specific Styles (Increased size) */
+        #timer-container .timer-display {
+            position: relative;
+            width: 90vw; /* Increased from 80vw */
+            height: 90vw; /* Increased from 80vw */
+            max-width: 350px; /* Increased from 300px */
+            max-height: 350px; /* Increased from 300px */
+            margin: 0 auto 3rem auto;
+            aspect-ratio: 1 / 1;
+        }
+
+        #timer-container .progress-ring__circle {
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+            stroke: #4a627a;
+            stroke-width: 0.8rem; /* Increased from 0.6rem */
+        }
+
+        #timer-container .progress-ring__progress {
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+            transition: stroke-dashoffset 0.5s linear, stroke 0.5s linear;
+            stroke-linecap: round;
+            stroke-width: 0.8rem; /* Increased from 0.6rem */
+        }
+
+        #timer-container .time-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4.5rem; /* Increased from 3.5rem */
+            font-weight: bold;
+            color: #ecf0f1;
+            text-shadow: 0 0.15rem 0.25rem rgba(0, 0, 0, 0.5);
+        }
+
+        #timer-container .options {
+            margin-bottom: 3rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            /* **MODIFIED**: Increase width of the options container */
+            width: 100%; 
+            max-width: 600px; /* Approximately double the previous 300px */
+        }
+
+        #timer-container .option-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #4a627a;
+            padding: 0.8rem 1rem;
+            border-radius: 0.5rem;
+            box-shadow: inset 0 0.1rem 0.2rem rgba(0, 0, 0, 0.2);
+        }
+
+        #timer-container .option-item label {
+            margin-right: 1rem;
+            font-weight: bold;
+            font-size: 1.05rem;
+            cursor: pointer;
+            flex-grow: 1;
+            text-align: right;
+        }
+
+        #timer-container .option-item input[type="number"] {
+            width: 4.5rem;
+            padding: 0.5rem;
+            border: 0.06rem solid #6c8ca7;
+            border-radius: 0.3rem;
+            text-align: center;
+            background-color: #5c7b9b;
+            color: #ecf0f1;
+            font-size: 1rem;
+            margin-left: 0.7rem;
+        }
+        #timer-container .option-item input[type="number"]::-webkit-inner-spin-button,
+        #timer-container .option-item input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        #timer-container .option-item input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        /* Radio button custom styling for timer options */
+        #timer-container .option-item input[type="radio"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 1.2rem;
+            height: 1.2rem;
+            border: 0.15rem solid #ecf0f1;
+            border-radius: 50%;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            background-color: #4a627a;
+            flex-shrink: 0;
+        }
+
+        #timer-container .option-item input[type="radio"]:checked {
+            background-color: #2ecc71;
+            border-color: #2ecc71;
+        }
+
+        #timer-container .option-item input[type="radio"]:checked::before {
+            content: '';
+            display: block;
+            width: 0.6rem;
+            height: 0.6rem;
+            background-color: #ecf0f1;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #timer-container .controls, .playback-controls {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            width: 100%;
+            max-width: 300px;
+            margin: 3rem auto 0 auto;
+            box-sizing: border-box;
+            direction: ltr;
+        }
+
+        #timer-container .controls button, .playback-controls button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 1.2rem 3rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.2);
+            direction: rtl;
+        }
+
+        #timer-container .controls button:hover, .playback-controls button:hover {
+            background-color: #2980b9;
+            transform: translateY(-0.1rem);
+        }
+
+        #timer-container #reset-btn {
+            background-color: #e74c3c;
+        }
+
+        #timer-container #reset-btn:hover {
+            background-color: #c0392b;
+        }
+
+        /* Music Player Specific Styles */
+        .music-icon {
+            font-size: 20rem;
+            color: #66ccff;
+            margin-bottom: 2rem;
+            width: 80%;
+            height: auto;
+            max-width: 100%;
+            display: block;
+            object-fit: contain;
+        }
+
+        .progress-bar-container {
+            width: 90%;
+            height: 1rem;
+            background-color: #4a627a;
+            border-radius: 0.5rem;
+            /* **MODIFIED**: Removed overflow: hidden to prevent cutting the thumb */
+            /* overflow: hidden; */
+            position: relative;
+            cursor: pointer;
+            direction: ltr;
+            /* **MODIFIED**: Add horizontal padding to allow thumb to sit fully within */
+            padding: 0 0.75rem; /* Enough space for half of the thumb on each side (1.5rem / 2) */
+            box-sizing: border-box; /* Include padding in the width calculation */
+            /* **MODIFIED**: Adjust vertical position to center the larger thumb */
+            margin-top: 0.75rem; /* Half the thumb's height (1.5rem / 2) - this will push it down a bit */
+            margin-bottom: 0.75rem; /* To balance the top margin visually */
+            display: flex; /* Use flexbox to vertically center the bar itself */
+            align-items: center;
+        }
+
+        .progress-bar {
+            height: 0.5rem; /* **MODIFIED**: Make the bar thinner to give more space for the thumb */
+            width: 0%;
+            background: linear-gradient(to right, #2ecc71, #3498db);
+            border-radius: 0.5rem;
+            transition: width 0.1s linear;
+            /* float: left; Removed float as flexbox is used */
+            position: absolute; /* Position absolutely within its padded container */
+            left: 0.75rem; /* Start after the left padding */
+            right: 0.75rem; /* End before the right padding */
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .progress-thumb {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%); /* **MODIFIED**: Center both horizontally and vertically using translate */
+            width: 1.5rem; /* **MODIFIED**: Made slightly larger, but now it has space */
+            height: 1.5rem; /* **MODIFIED**: Made slightly larger */
+            background-color: #ecf0f1;
+            border-radius: 50%;
+            box-shadow: 0 0.1rem 0.3rem rgba(0, 0, 0, 0.3);
+            left: 0%; /* Initial position, will be updated by JS */
+            transition: left 0.1s linear;
+            z-index: 1; /* Ensure thumb is above the bar */
+        }
+
+        .main-play-button, .home-button {
+            background-color: #e74c3c;
+            padding: 1.5rem 3.5rem;
+            border-radius: 2.5rem;
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bolder;
+            margin-top: 0;
+            width: 80%;
+            max-width: 300px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.2);
+        }
+
+        .main-play-button:hover, .home-button:hover {
+            background-color: #c0392b;
+        }
+
+        /* NEW: Styles for the Reset Game Button */
+        .reset-game-button {
+            background-color: #f1c40f; /* A distinct color, e.g., yellow/orange */
+            color: #2c3e50; /* Dark text for contrast */
+            margin-top: 1.5rem; /* Add some margin from the buttons above */
+            /* Inherits other styles like padding, font-size, width from .home-button */
+        }
+
+        .reset-game-button:hover {
+            background-color: #e67e22; /* Darker orange on hover */
+            transform: translateY(-3px); /* Same hover effect as others */
+        }
+
+        /* NEW: Styles for the Tutorial and About buttons */
+        .info-button {
+            background-color: #3498db; /* Blue color */
+            margin-top: 1.5rem; /* Space below the reset button */
+        }
+        .info-button:hover {
+            background-color: #2980b9;
+        }
+
+        /* NEW: Overlay for Tutorial/About content */
+        #info-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000; /* Higher than card overlay */
+            padding: 1rem;
+            box-sizing: border-box;
+            display: none; /* Hidden by default */
+        }
+
+        #info-overlay.active {
+            display: flex;
+        }
+
+        #info-content-box {
+            background-color: #34495e;
+            padding: 2rem;
+            border-radius: 0.8rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.5);
+            max-width: 700px; /* Adjust as needed */
+            width: 90%;
+            max-height: 90%; /* Limit height to prevent overflow */
+            overflow-y: auto; /* Enable scrolling for long content */
+            text-align: right;
+            position: relative; /* For close button positioning */
+            color: #ecf0f1;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        #info-content-box h2 {
+            color: #2ecc71;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            text-align: center;
+        }
+
+        #info-content-box pre {
+            white-space: pre-wrap; /* Preserve formatting but wrap lines */
+            word-wrap: break-word; /* Break long words */
+            text-align: right;
+            font-family: Arial, sans-serif; /* Keep consistent font */
+            background-color: #4a627a;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            direction: rtl; /* Ensure text direction for content */
+        }
+
+        #info-overlay .close-btn {
+            position: absolute;
+            top: 1rem;
+            left: 1rem; /* Position on the left for RTL */
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: #ecf0f1;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            z-index: 10;
+        }
+
+        #info-overlay .close-btn:hover {
+            color: #e74c3c;
+        }
+
+
+        /* Media queries for smaller screens */
+        @media (max-width: 768px) {
+            .card-gallery {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .card-item img {
+                max-width: 80px;
+            }
+            #mafia-setup-container.active,
+            #secret-army-setup-container.active {
+                padding: 1.5rem;
+                gap: 1.5rem;
+            }
+            /* Timer adjustments for tablets */
+            #timer-container .timer-display {
+                width: 90vw;
+                height: 90vw;
+                max-width: 300px; /* Adjusted slightly to keep it compact */
+                max-height: 300px;
+            }
+            #timer-container .time-text {
+                font-size: 4rem; /* Slightly smaller for tablets */
+            }
+            #timer-container .progress-ring__circle,
+            #timer-container .progress-ring__progress {
+                stroke-width: 0.7rem; /* Slightly smaller stroke for tablets */
+            }
+
+            /* last-action-container adjustments for tablets */
+            #last-action-container.active {
+                max-width: 500px; /* Adjust for tablet sizes */
+                padding: 1rem;
+            }
+            #final-move-buttons-gallery {
+                gap: 0.6rem; /* Slightly smaller gap on tablets */
+            }
+            .final-move-button {
+                font-size: 4rem; /* Adjust font size for tablets */
+            }
+
+            /* **MODIFIED**: Adjustments for options width on tablets */
+            #timer-container .options {
+                max-width: 500px; /* Adjusted for tablets */
+            }
+
+            /* Info Overlay on tablets */
+            #info-content-box {
+                padding: 1.5rem;
+                font-size: 1rem;
+            }
+            #info-content-box h2 {
+                font-size: 1.6rem;
+            }
+        }
+        @media (max-width: 480px) {
+            html {
+                font-size: 14px;
+            }
+            .container {
+                padding: 1.5rem;
+            }
+            /* Timer adjustments for phones */
+            #timer-container .timer-display {
+                width: 85vw; /* Changed from 95vw to 85vw */
+                height: 85vw; /* Changed from 95vw to 85vw */
+                max-width: 200px; /* Reduced to ensure it fits on very small screens */
+                max-height: 200px; /* Reduced to ensure it fits on very small screens */
+            }
+            #timer-container .time-text {
+                font-size: 3rem; /* Slightly smaller for phones */
+            }
+            #timer-container .progress-ring__circle,
+            #timer-container .progress-ring__progress {
+                stroke-width: 0.5rem; /* Adjusted for smaller size */
+            }
+            #timer-container .option-item input[type="number"] {
+                width: 4rem;
+            }
+            #timer-container .controls button, .playback-controls button {
+                padding: 1rem 2.5rem;
+                font-size: 1.1rem;
+            }
+            .music-icon {
+                font-size: 15rem;
+                width: 90%;
+            }
+            .main-play-button, .home-button, .start-game-button, .display-card-button {
+                padding: 1.2rem 3rem;
+                font-size: 1.5rem;
+            }
+            
+            /* Specific changes for 3 columns on mobile */
+            .card-gallery {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.1rem;
+                width: 98%;
+                max-width: unset;
+            }
+            .card-item {
+                padding: 0.1rem;
+            }
+            .card-item img {
+                max-width: 90%;
+                height: auto;
+            }
+            .card-item span {
+                font-size: 0.7rem;
+            }
+
+            /* last-action-container adjustments for phones */
+            #last-action-container.active {
+                max-width: 95vw; /* Allow it to take almost full width on small screens */
+                padding: 0.8rem; /* Minimal padding */
+                gap: 1rem; /* Smaller gap */
+            }
+            #final-move-buttons-gallery {
+                gap: 0.4rem; /* Very small gap for phones */
+            }
+            .final-move-button {
+                font-size: 3.5rem; /* Adjust font size for phones */
+            }
+
+            /* **MODIFIED**: Adjustments for options width on phones */
+            #timer-container .options {
+                max-width: 90vw; /* Allow it to take more width on phones */
+                width: 90vw; /* Ensure it respects width property */
+            }
+
+            /* NEW: Reset button on small screens */
+            .reset-game-button {
+                margin-top: 1rem; /* Slightly less margin on smaller screens */
+            }
+
+            /* Info Overlay on phones */
+            #info-content-box {
+                padding: 1rem;
+                font-size: 0.9rem;
+            }
+            #info-content-box h2 {
+                font-size: 1.4rem;
+                margin-bottom: 1rem;
+            }
+            #info-overlay .close-btn {
+                font-size: 1.5rem;
+                top: 0.5rem;
+                left: 0.5rem;
+            }
+        </style>
+</head>
+<body>
+    <div class="top-nav">
+        <a href="#" data-tab="last-action">حرکت آخر</a>
+        <a href="#" data-tab="music">موسیقی</a>
+        <a href="#" data-tab="timer">تایمر</a>
+        <a href="#" data-tab="home" class="active">خانه</a> 
+    </div>
+
+    <div id="home-container" class="container active">
+        <button class="home-button" id="mafia-button">مـافــیا</button>
+        <button class="home-button" id="secret-army-button">ارتش سری</button>
+        <button class="home-button reset-game-button" id="reset-game-btn">ریست بازی</button>
+        
+        <div style="height: 3rem; width: 100%;"></div> 
+
+        <button class="home-button info-button" id="tutorial-btn">آموزش</button>
+        <button class="home-button info-button" id="about-btn">درباره</button>
+    </div>
+
+    <div id="mafia-setup-container" class="container">
+        <div class="card-selection-section">
+            <h3>انتخاب نقش‌ها (مافیا)</h3>
+            <div id="mafia-roles-gallery" class="card-gallery">
+                
+            </div>
+        </div>
+
+        <div class="card-selection-section">
+            <h3>انتخاب پشت کارت (یک گزینه)</h3>
+            <div id="card-backs-gallery" class="card-gallery">
+                
+            </div>
+        </div>
+
+        <div class="card-selection-section">
+            <h3>انتخاب حرکت آخر</h3>
+            <div id="final-moves-gallery" class="card-gallery">
+                
+            </div>
+        </div>
+
+        <button class="start-game-button" id="start-mafia-game-btn">شروع بازی</button>
+    </div>
+
+    <div id="secret-army-setup-container" class="container">
+        <div class="card-selection-section">
+            <h3>انتخاب نقش‌ها (ارتش سری)</h3>
+            <div id="secret-army-roles-gallery" class="card-gallery">
+                </div>
+        </div>
+
+        <div class="card-selection-section">
+            <h3>انتخاب پشت کارت (یک گزینه)</h3>
+            <div id="secret-army-card-backs-gallery" class="card-gallery">
+                </div>
+        </div>
+        <button class="start-game-button" id="start-secret-army-game-btn">شروع بازی</button>
+    </div>
+
+    <div id="last-action-container" class="container">
+        <h2>کارت‌های حرکت آخر</h2>
+        <div id="final-move-buttons-gallery" class="card-gallery">
+            </div>
+        <p id="no-more-final-moves-message" style="display: none; color: #f1c40f; margin-top: 2rem;">کارت حرکت آخر دیگری وجود ندارد.</p>
+    </div>
+
+    <div id="card-display-overlay" class="hidden">
+        <div class="card-wrapper" id="card-wrapper">
+            <div class="card-face card-back" id="card-back-face">
+                
+            </div>
+            <div class="card-face card-front" id="card-front-face">
+                
+            </div>
+        </div>
+        <button class="display-card-button" id="display-next-card-btn">نمایش کارت</button>
+        <button class="display-card-button" id="hide-card-overlay-btn" style="display: none;">بازگشت</button> 
+    </div>
+
+    <div id="music-container" class="container">
+        <button id="add-music-btn" class="main-play-button">
+            افزودن آهنگ (+)
+        </button>
+        <input type="file" id="music-file-input" accept="audio/*" multiple style="display: none;">
+        
+        <div class="music-icon">🌃</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="music-progress-bar"></div>
+            <div class="progress-thumb" id="music-progress-thumb"></div>
+        </div>
+        <div class="playback-controls">
+            <button id="prev-track-btn">⏮️ قبلی</button>
+            <button id="next-track-btn">بعدی ⏭️</button>
+        </div>
+        <button id="main-play-pause-btn" class="main-play-button">آغاز شب</button>
+
+        <div id="added-songs-list" style="margin-top: 1rem; width: 90%; max-height: 150px; overflow-y: auto; text-align: right; background-color: #4a627a; padding: 0.5rem; border-radius: 0.5rem; display: none;">
+            <p style="font-size: 0.9rem; color: #ccc; margin-bottom: 0.3rem;">آهنگ‌های اضافه شده:</p>
+            <ul id="music-list-ul" style="list-style-type: none; padding: 0; margin: 0;"></ul>
+        </div>
+
+        <audio id="audio-player" preload="auto">
+            مرورگر شما از تگ audio پشتیبانی نمی‌کند.
+        </audio>
+    </div>
+
+    <div id="timer-container" class="container">
+        <div class="timer-display">
+            <svg class="progress-ring" width="100%" height="100%" viewBox="0 0 200 200">
+                <circle class="progress-ring__circle"
+                        stroke-width="10"
+                        fill="transparent"
+                        r="90"
+                        cx="100"
+                        cy="100"/>
+                <circle class="progress-ring__progress"
+                        stroke-width="10"
+                        fill="transparent"
+                        r="90"
+                        cx="100"
+                        cy="100"/>
+            </svg>
+            <div class="time-text" id="time-text">00:00</div>
+        </div>
+
+        <div class="options">
+            <div class="option-item">
+                <input type="radio" id="radio-talk" name="time-selection" value="45" data-time-type="talk">
+                <label for="radio-talk">صحبت</label>
+                <input type="number" id="talk-time-input" value="45" min="0">
+            </div>
+            <div class="option-item">
+                <input type="radio" id="radio-challenge" name="time-selection" value="30" data-time-type="challenge">
+                <label for="radio-challenge">چـالـش</label>
+                <input type="number" id="challenge-time-input" value="30" min="0">
+            </div>
+            <div class="option-item">
+                <input type="radio" id="radio-defense" name="time-selection" value="60" data-time-type="defense">
+                <label for="radio-defense">دفـــاع</label>
+                <input type="number" id="defense-time-input" value="60" min="0">
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="start-pause-btn">شروع</button>
+            <button id="reset-btn">ریست</button>
+        </div>
+    </div>
+
+    <audio id="bellSound" src="audio/alarm.mp3" preload="auto"></audio>
+
+    <div id="info-overlay" class="hidden">
+        <div id="info-content-box">
+            <button class="close-btn" id="close-info-overlay-btn">×</button>
+            <h2 id="info-title"></h2>
+            <div id="info-text-content"></div>
+        </div>
+    </div>
+
+    <script>
+        const APP_VERSION = "V1.0.1"; // Define your app version here
+        let currentGameType = ''; // NEW: To store the type of game being played ('mafia' or 'secret-army')
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- General Elements ---
+            const tabLinks = document.querySelectorAll('.top-nav a');
+            const containers = document.querySelectorAll('.container');
+
+            // --- Home Page Buttons ---
+            const mafiaButton = document.getElementById('mafia-button');
+            const secretArmyButton = document.getElementById('secret-army-button');
+            const resetGameBtn = document.getElementById('reset-game-btn');
+            // NEW: Tutorial and About Buttons
+            const tutorialBtn = document.getElementById('tutorial-btn');
+            const aboutBtn = document.getElementById('about-btn');
+
+
+            // --- Mafia Setup Elements ---
+            const startMafiaGameBtn = document.getElementById('start-mafia-game-btn'); // Renamed for clarity
+
+            // --- Secret Army Setup Elements ---
+            const startSecretArmyGameBtn = document.getElementById('start-secret-army-game-btn');
+
+            // --- Card Display Elements ---
+            const cardDisplayOverlay = document.getElementById('card-display-overlay');
+            const cardWrapper = document.getElementById('card-wrapper'); // Get the wrapper for flip class
+            const cardBackFace = document.getElementById('card-back-face');
+            const cardFrontFace = document.getElementById('card-front-face');
+            const displayNextCardBtn = document.getElementById('display-next-card-btn');
+            const hideCardOverlayBtn = document.getElementById('hide-card-overlay-btn'); 
+
+            let selectedRoleCards = []; // Cards chosen for the current game
+            let selectedBackCard = ''; // Back of card chosen for the current game
+            let remainingShuffledRoleCards = []; // For roles
+            let remainingFinalMoveCards = []; // For final actions
+            
+            // --- Last Action Elements ---
+            const finalMoveButtonsGallery = document.getElementById('final-move-buttons-gallery');
+            const noMoreFinalMovesMessage = document.getElementById('no-more-final-moves-message');
+
+            // --- Info Overlay Elements (NEW) ---
+            const infoOverlay = document.getElementById('info-overlay');
+            const infoTitle = document.getElementById('info-title');
+            const infoTextContent = document.getElementById('info-text-content');
+            const closeInfoOverlayBtn = document.getElementById('close-info-overlay-btn');
+
+
+            // --- Card Gallery Data ---
+            const mafiaRoles = [
+                'images/Mafia/01GodFather.jpg', 'images/Mafia/02DrWatson.jpg', 'images/Mafia/03Leon.jpg',
+                'images/Mafia/04TheCitizen1.jpg', 'images/Mafia/05TheCitizen2.jpg', 'images/Mafia/06TheCitizen3.jpg',
+                'images/Mafia/07Matador.jpg', 'images/Mafia/08Kane.jpg', 'images/Mafia/09Constantine.jpg',
+                'images/Mafia/10SaulGoodman.jpg', 'images/Mafia/11DeHolmes.jpg', 'images/Mafia/12TheCitizen4.jpg',
+                'images/Mafia/13DieHard.jpg', 'images/Mafia/14Psychiatrist.jpg', 'images/Mafia/15Mafia1.jpg',
+                'images/Mafia/16TheCitizen5.jpg', 'images/Mafia/17Mayor.jpg', 'images/Mafia/18Gunman.jpg',
+                'images/Mafia/19Ocean.jpg', 'images/Mafia/20DrLecter.jpg', 'images/Mafia/21Bodyguard.jpg',
+                'images/Mafia/22Hunter.jpg', 'images/Mafia/23MadBomber.jpg', 'images/Mafia/24Salesman.jpg',
+                'images/Mafia/25Mafia2.jpg', 'images/Mafia/26SleepWalker.jpg',
+                'images/Mafia/27Mafia3.jpg', 'images/Mafia/28Nostradamous.jpg', 'images/Mafia/29Thousandface.jpg',
+                'images/Mafia/30Joker.jpg', 'images/Mafia/31WereWolf.jpg', 'images/Mafia/32SerialKiller.jpg',
+                'images/Mafia/33CptJackSparrow.jpg'
+            ];
+
+            const secretArmyRoles = [
+                'images/SecretArmy/01Dr.Pascal1.jpg',
+                'images/SecretArmy/02Curtis1.jpg',
+                'images/SecretArmy/03Kesler1.jpg',
+                'images/SecretArmy/04Reinhardt3.jpg',
+                'images/SecretArmy/05Partizan2.jpg',
+                'images/SecretArmy/06Gestapo2.jpg',
+                'images/SecretArmy/07Partizan3.jpg',
+                'images/SecretArmy/08Costumer1.jpg',
+                'images/SecretArmy/09Costumer2.jpg',
+                'images/SecretArmy/10Pilot.jpg',
+                'images/SecretArmy/11Partizan4.jpg',
+                'images/SecretArmy/12Gestapo1.jpg',
+                'images/SecretArmy/13Costumer3.jpg',
+            ];
+
+            // Default selected cards for Secret Army
+            const defaultSecretArmyRoles = [
+                'images/SecretArmy/01Dr.Pascal1.jpg',
+                'images/SecretArmy/02Curtis1.jpg',
+                'images/SecretArmy/03Kesler1.jpg',
+                'images/SecretArmy/04Reinhardt3.jpg',
+                'images/SecretArmy/05Partizan2.jpg',
+                'images/SecretArmy/06Gestapo2.jpg',
+                'images/SecretArmy/07Partizan3.jpg',
+                'images/SecretArmy/08Costumer1.jpg',
+                'images/SecretArmy/09Costumer2.jpg',
+                'images/SecretArmy/10Pilot.jpg',
+            ];
+
+
+            const cardBacks = [
+                'images/Backs/B01.jpg', 'images/Backs/B02.jpg', 'images/Backs/B03.jpg',
+                'images/Backs/B04.jpg', 'images/Backs/B05.jpg', 'images/Backs/B07.jpg',
+                'images/Backs/SecretArmy.jpg'
+            ];
+            const defaultSecretArmyBack = 'images/Backs/SecretArmy.jpg';
+
+
+            const finalMoves = [
+                'images/FinalMoves/Exit-01.jpg', 'images/FinalMoves/Exit-02.jpg', 'images/FinalMoves/Exit-03.jpg',
+                'images/FinalMoves/Exit-04.jpg', 'images/FinalMoves/Exit-05.jpg', 'images/FinalMoves/Exit-06.jpg',
+                'images/FinalMoves/Exit-07.jpg', 'images/FinalMoves/Exit-08.jpg', 'images/FinalMoves/Exit-09.jpg',
+                'images/FinalMoves/Exit-10.jpg', 'images/FinalMoves/Exit-11.jpg', 'images/FinalMoves/Exit-12.jpg'
+            ];
+
+            // --- Helper Functions ---
+
+            // Fisher-Yates (Knuth) Shuffle for arrays
+            function shuffleArray(array) {
+                let currentIndex = array.length, randomIndex;
+                while (currentIndex !== 0) {
+                    randomIndex = Math.floor(Math.random() * currentIndex);
+                    currentIndex--;
+                    [array[currentIndex], array[randomIndex]] = [
+                        array[randomIndex], array[currentIndex]];
+                }
+                return array;
+            }
+
+            // Updated getSelectedCards to read from 'selected' class
+            function getSelectedCards(galleryId) {
+                const gallery = document.getElementById(galleryId);
+                if (!gallery) return [];
+                const selectedItems = gallery.querySelectorAll('.card-item.selected');
+                return Array.from(selectedItems).map(item => item.dataset.imagePath); // Get path from dataset
+            }
+
+            function setTabActive(tabName) {
+                tabLinks.forEach(l => l.classList.remove('active'));
+                const targetLink = document.querySelector(`.top-nav a[data-tab="${tabName}"]`);
+                if (targetLink) {
+                    targetLink.classList.add('active');
+                }
+            }
+
+            function showContainer(containerId) {
+                containers.forEach(c => {
+                    c.classList.remove('active'); // Remove active class from all
+                });
+                cardDisplayOverlay.classList.add('hidden'); // Hide card overlay when showing other containers
+                infoOverlay.classList.remove('active'); // Hide info overlay too
+
+                const targetContainer = document.getElementById(containerId);
+                if (targetContainer) {
+                    targetContainer.classList.add('active'); // Add active class to the target
+                }
+            }
+
+            // Function to generate image galleries
+            function generateGallery(containerId, imagesArray, selectionType, defaultSelections = []) {
+                const galleryContainer = document.getElementById(containerId);
+                if (!galleryContainer) return;
+
+                galleryContainer.innerHTML = ''; // Clear previous content
+
+                imagesArray.forEach((imagePath, index) => {
+                    const cardItem = document.createElement('div');
+                    cardItem.classList.add('card-item');
+                    cardItem.dataset.imagePath = imagePath; // Store image path in dataset for easy retrieval
+
+                    const img = document.createElement('img');
+                    img.src = imagePath;
+                    img.alt = `Card ${index + 1}`;
+
+                    // Set 'selected' class if it's a default selection
+                    if (defaultSelections.includes(imagePath)) {
+                        cardItem.classList.add('selected');
+                    }
+                    
+                    cardItem.addEventListener('click', () => {
+                        if (selectionType === 'single') {
+                            // For single selection (radio-like), deselect others
+                            const currentSelected = galleryContainer.querySelector('.card-item.selected');
+                            if (currentSelected && currentSelected !== cardItem) {
+                                currentSelected.classList.remove('selected');
+                            }
+                            cardItem.classList.toggle('selected'); // Toggle for the clicked one
+                        } else if (selectionType === 'multiple') {
+                            // For multiple selection (checkbox-like)
+                            cardItem.classList.toggle('selected');
+                        }
+                    });
+
+                    cardItem.appendChild(img);
+                    galleryContainer.appendChild(cardItem);
+                });
+            }
+
+            // MODIFIED: Function to display the card overlay with a specific card
+            // Now takes a flag `isRoleCard` to differentiate behavior
+            function displayCard(cardImagePath, isRoleCard = true) {
+                containers.forEach(c => c.classList.remove('active')); // Hide all main containers
+                infoOverlay.classList.remove('active'); // Hide info overlay
+                document.body.style.overflow = 'hidden'; // Prevent body scroll
+                cardDisplayOverlay.classList.remove('hidden'); // Show card display overlay
+
+                if (isRoleCard) {
+                    // Show for Role Cards: Back face first, then front, with 'نمایش کارت' / 'بعدی' button
+                    displayNextCardBtn.style.display = 'block'; 
+                    hideCardOverlayBtn.style.display = 'none'; 
+
+                    cardBackFace.style.backgroundImage = `url('${selectedBackCard}')`;
+                    cardFrontFace.style.backgroundImage = `url('${cardImagePath}')`;
+                    
+                    // Reset flip state and button text before displaying
+                    cardWrapper.classList.remove('flipped');
+                    displayNextCardBtn.textContent = 'نمایش کارت';
+
+                } else { 
+                    // Show for Final Move Cards: Only front face, with 'بازگشت' button
+                    displayNextCardBtn.style.display = 'none'; // Hide role card button
+                    hideCardOverlayBtn.style.display = 'block'; // Show 'بازگشت' button
+
+                    cardWrapper.classList.add('flipped'); // Immediately show the front (no back for final moves)
+                    cardFrontFace.style.backgroundImage = `url('${cardImagePath}')`; // Set final move image
+                    cardBackFace.style.backgroundImage = `url('')`; // Clear back image for final moves
+                }
+            }
+
+            // Function to generate and display final move buttons
+            function displayFinalMoveButtons() {
+                finalMoveButtonsGallery.innerHTML = ''; // Clear previous buttons
+                noMoreFinalMovesMessage.style.display = 'none';
+
+                if (remainingFinalMoveCards.length === 0) {
+                    noMoreFinalMovesMessage.style.display = 'block';
+                    return;
+                }
+
+                let currentButtonNumber = 1;
+                remainingFinalMoveCards.forEach((cardPath) => {
+                    const button = document.createElement('button');
+                    button.classList.add('card-item');
+                    button.classList.add('final-move-button');
+                    button.textContent = currentButtonNumber++;
+                    button.dataset.cardPath = cardPath;
+
+                    button.addEventListener('click', (e) => {
+                        const clickedButton = e.currentTarget;
+                        const cardPathToShow = clickedButton.dataset.cardPath;
+
+                        // Display the card (only front face shown)
+                        displayCard(cardPathToShow, false); // false indicates it's a final move card
+                        
+                        // Remove the card from the active set
+                        // Note: We remove it *after* displaying. If you want it removed *before* display, move this line.
+                        const indexToRemove = remainingFinalMoveCards.indexOf(cardPathToShow);
+                        if (indexToRemove > -1) {
+                            remainingFinalMoveCards.splice(indexToRemove, 1);
+                        }
+                    });
+                    
+                    finalMoveButtonsGallery.appendChild(button);
+                });
+
+                if (remainingFinalMoveCards.length === 0) {
+                    noMoreFinalMovesMessage.style.display = 'block';
+                }
+            }
+
+
+            // --- Info Overlay Functions (NEW) ---
+            function showInfoOverlay(title, content) {
+                containers.forEach(c => c.classList.remove('active')); // Hide all main containers
+                cardDisplayOverlay.classList.add('hidden'); // Hide card overlay
+                document.body.style.overflow = 'hidden'; // Prevent body scroll
+                infoTitle.textContent = title;
+                infoTextContent.innerHTML = content; // Use innerHTML to allow preformatted text
+                infoOverlay.classList.add('active');
+            }
+
+            function hideInfoOverlay() {
+                infoOverlay.classList.remove('active');
+                document.body.style.overflow = ''; // Restore body scroll
+                showContainer('home-container'); // Go back to home page after closing info
+                setTabActive('home');
+            }
+
+
+            // --- Event Listeners ---
+
+            // Tab Switching Logic
+            tabLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetTab = e.target.dataset.tab;
+                    setTabActive(targetTab);
+                    showContainer(`${targetTab}-container`); // This will also hide card display overlay and info overlay
+                    document.body.style.overflow = ''; // Restore body scroll
+
+                    if (targetTab === 'last-action') {
+                        // When entering "Last Action" tab, re-generate buttons to reflect removed cards
+                        displayFinalMoveButtons();
+                    } else if (targetTab !== 'timer') {
+                        pauseTimer(); // Pause timer if switching away
+                    } else {
+                        // Ensure setupTimerSVG is called only when timer is visible
+                        setTimeout(setupTimerSVG, 50); 
+                    }
+                });
+            });
+
+            // Mafia Button on Home Page
+            if (mafiaButton) {
+                mafiaButton.addEventListener('click', () => {
+                    showContainer('mafia-setup-container');
+                    tabLinks.forEach(l => l.classList.remove('active')); // No tab active on setup
+                    // Re-generate galleries to ensure default selections are applied correctly if user navigates back and forth
+                    generateGallery('mafia-roles-gallery', mafiaRoles, 'multiple'); // Mafia default selection (none initially)
+                    generateGallery('card-backs-gallery', cardBacks, 'single', ['images/Backs/B01.jpg']); // Mafia default back
+                    generateGallery('final-moves-gallery', finalMoves, 'multiple', [
+                        'images/FinalMoves/Exit-01.jpg', 'images/FinalMoves/Exit-02.jpg', 'images/FinalMoves/Exit-03.jpg',
+                        'images/FinalMoves/Exit-04.jpg', 'images/FinalMoves/Exit-05.jpg'
+                    ]);
+                });
+            }
+
+            // Secret Army Button on Home Page
+            if (secretArmyButton) {
+                secretArmyButton.addEventListener('click', () => {
+                    showContainer('secret-army-setup-container');
+                    tabLinks.forEach(l => l.classList.remove('active')); // No tab active on setup
+                    // Generate Secret Army specific galleries
+                    generateGallery('secret-army-roles-gallery', secretArmyRoles, 'multiple', defaultSecretArmyRoles);
+                    generateGallery('secret-army-card-backs-gallery', cardBacks, 'single', [defaultSecretArmyBack]);
+                    // Note: No final moves gallery for Secret Army
+                });
+            }
+
+            // NEW: Reset Game Button Listener
+            if (resetGameBtn) {
+                resetGameBtn.addEventListener('click', () => {
+                    location.reload(); // Reloads the entire page, effectively resetting everything
+                });
+            }
+            
+            // NEW: Tutorial Button Listener
+            if (tutorialBtn) {
+                tutorialBtn.addEventListener('click', async () => {
+                    try {
+                        const response = await fetch('tutorial.txt'); // Fetch the text file
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const text = await response.text();
+                        showInfoOverlay('آموزش', `<pre>${text}</pre>`); // Display content in a pre tag for formatting
+                    } catch (error) {
+                        console.error('Error loading tutorial:', error);
+                        showInfoOverlay('خطا', '<p>متاسفانه فایل آموزش پیدا نشد یا در بارگذاری آن مشکلی پیش آمد.</p>');
+                    }
+                });
+            }
+
+            // NEW: About Button Listener
+            if (aboutBtn) {
+                aboutBtn.addEventListener('click', () => {
+                    const aboutContent = `
+                        <p>ورژن برنامه: <strong>${APP_VERSION}</strong></p>
+                        <p>توسعه دهنده: [Xyusufi@gmail.com - @XY009]</p>
+                        <p>این برنامه جهت سهولت در اجرای بازی‌های مافیا و ارتش سری طراحی شده است. امیدواریم از آن لذت ببرید.</p>
+                        <p>تاریخ آخرین به‌روزرسانی: ${new Date().toLocaleDateString('fa-IR')}</p>
+                    `;
+                    showInfoOverlay('درباره برنامه', aboutContent);
+                });
+            }
+            
+            // NEW: Close Info Overlay Button Listener
+            if (closeInfoOverlayBtn) {
+                closeInfoOverlayBtn.addEventListener('click', hideInfoOverlay);
+            }
+
+
+            // Start Mafia Game Button
+            if (startMafiaGameBtn) {
+                startMafiaGameBtn.addEventListener('click', () => {
+                    currentGameType = 'mafia'; // NEW: Set game type
+                    // No need to explicitly set music button text here, as playMusic/pauseMusic will handle it
+                    // and by default it's 'آغاز شب' if not changed by secret army.
+
+                    selectedRoleCards = getSelectedCards('mafia-roles-gallery'); // Get selected from mafia gallery
+                    if (selectedRoleCards.length === 0) {
+                        alert('لطفاً حداقل یک نقش را انتخاب کنید!');
+                        return;
+                    }
+                    const tempSelectedBacks = getSelectedCards('card-backs-gallery');
+                    selectedBackCard = tempSelectedBacks.length > 0 ? tempSelectedBacks[0] : '';
+
+                    if (!selectedBackCard) {
+                        alert('لطفاً یک طرح برای پشت کارت انتخاب کنید!');
+                        return;
+                    }
+
+                    remainingShuffledRoleCards = shuffleArray([...selectedRoleCards]); // Populate role cards
+                    
+                    // Populate final move cards from mafia setup (THIS IS SEPARATE)
+                    const selectedFinalMoves = getSelectedCards('final-moves-gallery');
+                    remainingFinalMoveCards = shuffleArray([...selectedFinalMoves]); // Populate final move cards
+
+                    // Display the first role card (showing its back)
+                    if (remainingShuffledRoleCards.length > 0) {
+                        // **MODIFIED:** Get the first card and remove it BEFORE displaying
+                        const firstCardToShow = remainingShuffledRoleCards.shift(); // .shift() removes the first element and returns it
+                        displayCard(firstCardToShow, true); // true indicates it's a role card
+                    } else {
+                        // If no role cards selected, go straight to timer
+                        cardDisplayOverlay.classList.add('hidden');
+                        document.body.style.overflow = '';
+                        setTabActive('timer');
+                        showContainer('timer-container');
+                        setTimeout(setupTimerSVG, 50);
+                    }
+                });
+            }
+
+            // Start Secret Army Game Button
+            if (startSecretArmyGameBtn) {
+                startSecretArmyGameBtn.addEventListener('click', () => {
+                    currentGameType = 'secret-army'; // NEW: Set game type
+                    // IMMEDIATELY set the music button text here!
+                    mainPlayPauseBtn.textContent = 'آغاز وضعیت اضطراری'; 
+
+                    selectedRoleCards = getSelectedCards('secret-army-roles-gallery'); // Get selected from secret army gallery
+                    if (selectedRoleCards.length === 0) {
+                        alert('لطفاً حداقل یک نقش را انتخاب کنید!');
+                        return;
+                    }
+                    const tempSelectedBacks = getSelectedCards('secret-army-card-backs-gallery');
+                    selectedBackCard = tempSelectedBacks.length > 0 ? tempSelectedBacks[0] : '';
+
+                    if (!selectedBackCard) {
+                        alert('لطفاً یک طرح برای پشت کارت انتخاب کنید!');
+                        return;
+                    }
+
+                    remainingShuffledRoleCards = shuffleArray([...selectedRoleCards]); // Populate role cards
+                    
+                    // Clear final move cards for Secret Army, as it doesn't have that gallery
+                    remainingFinalMoveCards = []; 
+
+                    // Display the first role card (showing its back)
+                    if (remainingShuffledRoleCards.length > 0) {
+                        // **MODIFIED:** Get the first card and remove it BEFORE displaying
+                        const firstCardToShow = remainingShuffledRoleCards.shift(); // .shift() removes the first element and returns it
+                        displayCard(firstCardToShow, true); // true indicates it's a role card
+                    } else {
+                        // If no role cards selected, go straight to timer
+                        cardDisplayOverlay.classList.add('hidden');
+                        document.body.style.overflow = '';
+                        setTabActive('timer');
+                        showContainer('timer-container');
+                        setTimeout(setupTimerSVG, 50);
+                    }
+                });
+            }
+
+
+            // Display Next Card Button (ONLY for role cards)
+            if (displayNextCardBtn) {
+                displayNextCardBtn.addEventListener('click', () => {
+                    // Check if the card is currently showing its back (not flipped)
+                    if (!cardWrapper.classList.contains('flipped')) {
+                        cardWrapper.classList.add('flipped'); // Flip to reveal front
+                        displayNextCardBtn.textContent = 'بعدی';
+                    } else { // Card is currently showing its front (flipped), prepare for next card
+                        cardWrapper.classList.remove('flipped'); // Flip back to hide front and show back
+                        displayNextCardBtn.textContent = 'نمایش کارت';
+
+                        // Give a small delay for the flip animation to complete before changing content
+                        setTimeout(() => {
+                            if (remainingShuffledRoleCards.length > 0) {
+                                // Pick a random next card from the remaining list
+                                const nextRandomIndex = Math.floor(Math.random() * remainingShuffledRoleCards.length);
+                                const nextCardPath = remainingShuffledRoleCards[nextRandomIndex];
+                                remainingShuffledRoleCards.splice(nextRandomIndex, 1); // Remove the selected card
+
+                                cardFrontFace.style.backgroundImage = `url('${nextCardPath}')`; // Set the next card's image
+                                cardBackFace.style.backgroundImage = `url('${selectedBackCard}')`; // Ensure back is correct
+                                displayNextCardBtn.disabled = false; // Enable if it was disabled
+                            } else {
+                                // No more role cards, transition to timer
+                                displayNextCardBtn.disabled = true;
+                                displayNextCardBtn.textContent = 'پایان کارت‌ها';
+                                setTimeout(() => {
+                                    cardDisplayOverlay.classList.add('hidden');
+                                    document.body.style.overflow = '';
+                                    setTabActive('timer');
+                                    showContainer('timer-container');
+                                    setTimeout(setupTimerSVG, 50);
+                                }, 500); // Small delay to allow button text to register
+                            }
+                        }, 600); // Wait for transition duration (0.6s)
+                    }
+                });
+            }
+
+            // New Event Listener for the "بازگشت" button on card overlay (ONLY for final move cards)
+            if (hideCardOverlayBtn) {
+                hideCardOverlayBtn.addEventListener('click', () => {
+                    cardDisplayOverlay.classList.add('hidden'); // Hide the overlay
+                    document.body.style.overflow = ''; // Restore body scroll
+
+                    // Reset card faces to default for the *next* potential role card display
+                    cardWrapper.classList.remove('flipped'); // Ensure it's unflipped for next role card
+                    cardFrontFace.style.backgroundImage = `url('')`; // Clear front image
+                    cardBackFace.style.backgroundImage = `url('')`; // Clear back image just in case
+
+                    hideCardOverlayBtn.style.display = 'none'; // Hide itself
+                    displayNextCardBtn.style.display = 'block'; // Ensure 'Next Card' button is visible for future role display
+
+                    displayFinalMoveButtons(); // Re-render buttons (important to show remaining ones)
+                    setTabActive('last-action'); // Go back to Last Action tab
+                    showContainer('last-action-container'); // Show Last Action container
+                });
+            }
+
+
+            // --- Timer Script ---
+            const timeText = document.getElementById('time-text');
+            const talkTimeInput = document.getElementById('talk-time-input');
+            const challengeTimeInput = document.getElementById('challenge-time-input');
+            const defenseTimeInput = document.getElementById('defense-time-input');
+            const radioButtons = document.querySelectorAll('input[name="time-selection"]');
+            const startPauseBtn = document.getElementById('start-pause-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const progressCircle = document.querySelector('#timer-container .progress-ring__progress');
+            const bellSound = document.getElementById('bellSound');
+
+            let totalTime = 0;
+            let timeLeft = 0;
+            let timerInterval;
+            let bellInterval;
+            let isPaused = true;
+            let timerRadius, timerCircumference;
+
+            function updateTimerDisplay() {
+                timeText.textContent = formatTime(timeLeft);
+                const percent = totalTime === 0 ? 0 : (timeLeft / totalTime) * 100;
+                let strokeColor = '#2ecc71'; // Green for most time
+                if (timeLeft <= 10 && timeLeft > 0) { // Last 10 seconds
+                    strokeColor = '#e74c3c'; // Red
+                } else if (timeLeft <= 30 && timeLeft > 0) { // Last 30 seconds
+                    strokeColor = '#f39c12'; // Orange
+                }
+                setTimerProgress(percent, strokeColor);
+            }
+
+            function setupTimerSVG() {
+                const svg = progressCircle.closest('svg');
+                if (!svg) {
+                    console.error("SVG element not found for timer progress ring.");
+                    return;
+                }
+
+                // Get the actual width of the timer-display element (its parent)
+                const displayElement = svg.parentElement; // This is .timer-display
+                const displayWidth = displayElement.offsetWidth;
+                const displayHeight = displayElement.offsetHeight;
+
+                if (displayWidth === 0 || displayHeight === 0) {
+                    console.warn("Timer display dimensions are zero. Timer container might be hidden or not rendered correctly. Retrying...");
+                    setTimeout(setupTimerSVG, 100);
+                    return;
+                }
+                
+                const strokeWidth = parseFloat(progressCircle.getAttribute('stroke-width'));
+                timerRadius = (Math.min(displayWidth, displayHeight) - strokeWidth) / 2;
+                timerCircumference = 2 * Math.PI * timerRadius;
+
+                const circles = svg.querySelectorAll('circle');
+                circles.forEach(circle => {
+                    circle.setAttribute('r', timerRadius);
+                    circle.setAttribute('cx', displayWidth / 2);
+                    circle.setAttribute('cy', displayHeight / 2);
+                });
+
+                progressCircle.style.strokeDasharray = `${timerCircumference} ${timerCircumference}`;
+                updateTimerDisplay();
+            }
+
+            function setTimerProgress(percent, color) {
+                const offset = timerCircumference - (percent / 100) * timerCircumference;
+                progressCircle.style.strokeDashoffset = offset;
+                progressCircle.style.stroke = color;
+            }
+
+            function formatTime(seconds) {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+            }
+
+            function playBell() {
+                bellSound.currentTime = 0;
+                bellSound.play().catch(e => console.error("Error playing bell sound:", e));
+            }
+
+            function stopBellInterval() {
+                if (bellInterval) {
+                    clearInterval(bellInterval);
+                    bellInterval = null;
+                }
+            }
+
+            function startTimer() {
+                stopBellInterval(); // Stop any previous bell intervals
+                if (isPaused) { // Only start if currently paused
+                    timerInterval = setInterval(() => {
+                        if (timeLeft > 0) {
+                            timeLeft--;
+                            updateTimerDisplay();
+                        } else {
+                            clearInterval(timerInterval);
+                            timerInterval = null;
+                            isPaused = true; // Timer has finished, so it's effectively paused
+                            startPauseBtn.textContent = 'شروع'; // Reset button text when timer ends
+                            playBell();
+                            bellInterval = setInterval(playBell, 10000); // Ring bell every 10 seconds
+                        }
+                    }, 1000);
+                    isPaused = false;
+                    startPauseBtn.textContent = 'توقف'; // Change to pause button
+                }
+            }
+
+            function pauseTimer() {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                isPaused = true;
+                startPauseBtn.textContent = 'ادامه'; // Change to continue button
+                stopBellInterval(); // Stop bell if it was ringing
+            }
+
+            function resetTimer() {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                isPaused = true;
+                startPauseBtn.textContent = 'شروع'; // Always start as 'شروع' on reset
+                
+                // Get the currently selected radio button's time
+                const selectedRadio = document.querySelector('input[name="time-selection"]:checked');
+                if (selectedRadio) {
+                    const timeType = selectedRadio.dataset.timeType;
+                    let selectedTimeInput;
+                    switch (timeType) {
+                        case 'talk': selectedTimeInput = talkTimeInput; break;
+                        case 'challenge': selectedTimeInput = challengeTimeInput; break;
+                        case 'defense': selectedTimeInput = defenseTimeInput; break;
+                    }
+                    totalTime = parseInt(selectedTimeInput.value);
+                } else {
+                    // Fallback if no radio is selected, e.g., on initial load
+                    totalTime = parseInt(talkTimeInput.value); // Default to talk time
+                }
+
+                timeLeft = totalTime;
+                updateTimerDisplay();
+                // Ensure the progress bar is fully reset visually
+                if (totalTime === 0) {
+                    setTimerProgress(0, progressCircle.previousElementSibling.getAttribute('stroke'));
+                }
+                stopBellInterval();
+            }
+
+            function initializeTimer() {
+                const talkRadioBtn = document.getElementById('radio-talk');
+                if (talkRadioBtn) {
+                    talkRadioBtn.checked = true;
+                    // Trigger change event to set initial totalTime and timeLeft
+                    talkRadioBtn.dispatchEvent(new Event('change'));
+                }
+            }
+
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    let selectedTimeInput;
+                    const timeType = radio.dataset.timeType;
+
+                    switch (timeType) {
+                        case 'talk': selectedTimeInput = talkTimeInput; break;
+                        case 'challenge': selectedTimeInput = challengeTimeInput; break;
+                        case 'defense': selectedTimeInput = defenseTimeInput; break;
+                    }
+                    totalTime = parseInt(selectedTimeInput.value);
+                    timeLeft = totalTime;
+                    resetTimer(); // Reset always clears interval and sets button to 'شروع'
+                    updateTimerDisplay();
+                });
+            });
+
+            // Event listeners for number inputs
+            [talkTimeInput, challengeTimeInput, defenseTimeInput].forEach(input => {
+                input.addEventListener('change', () => {
+                    // Find the corresponding radio button
+                    const radioId = `radio-${input.id.replace('-time-input', '')}`;
+                    const radio = document.getElementById(radioId);
+                    
+                    // If this input's radio is checked, update the timer
+                    if (radio && radio.checked) {
+                        totalTime = parseInt(input.value);
+                        timeLeft = totalTime;
+                        resetTimer(); // Reset always clears interval and sets button to 'شروع'
+                        updateTimerDisplay();
+                    }
+                });
+            });
+
+
+            startPauseBtn.addEventListener('click', () => {
+                if (isPaused) {
+                    startTimer();
+                } else {
+                    pauseTimer();
+                }
+            });
+
+            resetBtn.addEventListener('click', resetTimer);
+
+            // Ensure bell stops if another timer option is selected while bell is ringing
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    stopBellInterval();
+                });
+            });
+
+            // --- Music Player Script ---
+            const audioPlayer = document.getElementById('audio-player');
+            const mainPlayPauseBtn = document.getElementById('main-play-pause-btn');
+            const prevTrackBtn = document.getElementById('prev-track-btn');
+            const nextTrackBtn = document.getElementById('next-track-btn');
+            const musicProgressBar = document.getElementById('music-progress-bar');
+            const musicProgressThumb = document.getElementById('music-progress-thumb');
+            const progressBarContainer = document.querySelector('.progress-bar-container');
+
+            // New elements for adding files
+            const addMusicBtn = document.getElementById('add-music-btn');
+            const musicFileInput = document.getElementById('music-file-input');
+            const addedSongsListDiv = document.getElementById('added-songs-list'); // The div containing the list
+            const musicListUl = document.getElementById('music-list-ul'); // The actual <ul> element
+
+            const musicTracks = [
+                "audio/NightMusic1.mp3",
+                "audio/NightMusic2.mp3",
+                "audio/NightMusic3.mp3",
+                "audio/NightMusic4.mp3",
+                "audio/NightMusic5.mp3",
+                "audio/NightMusic6.mp3"
+            ];
+            // Array to store user-added audio file objects (with name and URL)
+            let userAddedTracks = [];
+
+            let currentTrackIndex = -1;
+            let isMusicPlaying = false;
+
+            // --- New Helper for combining tracks ---
+            function getAllAvailableTracks() {
+                // Combine default tracks with user-added tracks
+                // For user-added tracks, we need their URL, not just the File object
+                const allTracks = [...musicTracks, ...userAddedTracks.map(track => track.url)];
+                return allTracks;
+            }
+
+            function getRandomTrackIndex() {
+                const allTracks = getAllAvailableTracks();
+                if (allTracks.length === 0) return -1; // No tracks available
+
+                let randomIndex;
+                do {
+                    randomIndex = Math.floor(Math.random() * allTracks.length);
+                } while (allTracks.length > 1 && randomIndex === currentTrackIndex);
+                return randomIndex;
+            }
+
+            function loadTrack(index) {
+                const allTracks = getAllAvailableTracks();
+                if (index < 0 || index >= allTracks.length) {
+                    audioPlayer.src = ''; // Clear source if index is invalid
+                    currentTrackIndex = -1;
+                    return;
+                }
+                audioPlayer.src = allTracks[index];
+                audioPlayer.load();
+                currentTrackIndex = index;
+            }
+
+            // MODIFIED: Update playMusic and pauseMusic to use currentGameType
+            function playMusic() {
+                audioPlayer.play().then(() => {
+                    isMusicPlaying = true;
+                    if (currentGameType === 'secret-army') {
+                        mainPlayPauseBtn.textContent = 'پایان وضعیت اضطراری';
+                    } else {
+                        mainPlayPauseBtn.textContent = 'پایان شب';
+                    }
+                }).catch(e => console.error("Error playing music:", e));
+            }
+
+            function pauseMusic() {
+                audioPlayer.pause();
+                isMusicPlaying = false;
+                if (currentGameType === 'secret-army') {
+                    mainPlayPauseBtn.textContent = 'آغاز وضعیت اضطراری';
+                } else {
+                    mainPlayPauseBtn.textContent = 'آغاز شب';
+                }
+            }
+
+            function toggleMusicPlayback() {
+                if (isMusicPlaying) {
+                    pauseMusic();
+                } else {
+                    if (audioPlayer.src === "" || audioPlayer.paused && audioPlayer.currentTime === 0) {
+                        // If no track is loaded or it's the very beginning, load a random one
+                        const allTracks = getAllAvailableTracks();
+                        if (allTracks.length > 0) {
+                            loadTrack(getRandomTrackIndex());
+                        } else {
+                            alert('هیچ آهنگی برای پخش وجود ندارد! لطفاً آهنگ اضافه کنید.');
+                            return; // Don't try to play if no tracks
+                        }
+                    }
+                    playMusic();
+                }
+            }
+
+            function playNextTrack() {
+                const allTracks = getAllAvailableTracks();
+                if (allTracks.length === 0) {
+                    pauseMusic(); // Stop if no tracks are available
+                    return;
+                }
+                let nextIndex = getRandomTrackIndex(); // Get random, ensuring it's not the same if >1 track
+                loadTrack(nextIndex);
+                if (isMusicPlaying) {
+                    playMusic();
+                } else {
+                    updateMusicProgressBar();
+                }
+            }
+
+            function playPrevTrack() {
+                const allTracks = getAllAvailableTracks();
+                if (allTracks.length === 0) {
+                    pauseMusic(); // Stop if no tracks are available
+                    return;
+                }
+                let prevIndex = getRandomTrackIndex(); // Get random, ensuring it's not the same if >1 track
+                loadTrack(prevIndex);
+                if (isMusicPlaying) {
+                    playMusic();
+                } else {
+                    updateMusicProgressBar();
+                }
+            }
+            
+            function updateMusicProgressBar() {
+                if (!isNaN(audioPlayer.duration) && audioPlayer.duration > 0) {
+                    const percent = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+                    
+                    // Get actual padding-left from computed style
+                    const containerPaddingLeft = parseFloat(getComputedStyle(progressBarContainer).paddingLeft);
+                    const containerPaddingRight = parseFloat(getComputedStyle(progressBarContainer).paddingRight);
+                    const containerPaddedWidth = progressBarContainer.offsetWidth - (containerPaddingLeft + containerPaddingRight);
+
+                    // Update the width of the progress bar itself (fills the padded area)
+                    musicProgressBar.style.width = `${percent}%`; 
+                    
+                    // Calculate thumb position
+                    const thumbHalfWidth = musicProgressThumb.offsetWidth / 2;
+                    // Calculate the position relative to the *padded* width, then add the left padding
+                    let thumbLeftCalc = (percent / 100) * containerPaddedWidth + containerPaddingLeft;
+                    
+                    // Clamp the thumb position to ensure its center stays within the padded area
+                    thumbLeftCalc = Math.max(containerPaddingLeft + thumbHalfWidth, thumbLeftCalc); // Min left for thumb center
+                    thumbLeftCalc = Math.min(progressBarContainer.offsetWidth - containerPaddingRight - thumbHalfWidth, thumbLeftCalc); // Max left for thumb center
+
+                    musicProgressThumb.style.left = `${thumbLeftCalc}px`;
+
+                } else {
+                    musicProgressBar.style.width = '0%';
+                    musicProgressThumb.style.left = `${parseFloat(getComputedStyle(progressBarContainer).paddingLeft)}px`; // Position thumb at start padding
+                }
+            }
+
+            mainPlayPauseBtn.addEventListener('click', toggleMusicPlayback);
+            prevTrackBtn.addEventListener('click', playPrevTrack);
+            nextTrackBtn.addEventListener('click', playNextTrack);
+
+            audioPlayer.addEventListener('timeupdate', updateMusicProgressBar);
+            audioPlayer.addEventListener('ended', () => {
+                playNextTrack();
+            });
+
+            // Adjust progress bar click logic for RTL layout and thumb positioning
+            progressBarContainer.addEventListener('click', (e) => {
+                const rect = progressBarContainer.getBoundingClientRect();
+                const clickX = e.clientX - rect.left; // X position relative to the element
+                
+                // Adjust for padding when calculating click percentage
+                const containerPaddingLeft = parseFloat(getComputedStyle(progressBarContainer).paddingLeft);
+                const containerPaddingRight = parseFloat(getComputedStyle(progressBarContainer).paddingRight);
+                const containerPaddedWidth = rect.width - (containerPaddingLeft + containerPaddingRight);
+                
+                const adjustedClickX = clickX - containerPaddingLeft;
+                
+                // Ensure percentage is between 0 and 1
+                const percent = Math.max(0, Math.min(1, adjustedClickX / containerPaddedWidth)); 
+                
+                if (!isNaN(audioPlayer.duration) && audioPlayer.duration > 0) {
+                    audioPlayer.currentTime = audioPlayer.duration * percent;
+                }
+            });
+
+            // --- Event Listeners for new elements (Music File Input) ---
+            addMusicBtn.addEventListener('click', () => {
+                musicFileInput.click(); // Trigger the hidden file input click
+            });
+
+            musicFileInput.addEventListener('change', (event) => {
+                const files = event.target.files;
+                if (files.length > 0) {
+                    // Show the added songs list div
+                    addedSongsListDiv.style.display = 'block';
+
+                    for (const file of files) {
+                        // Check if it's an audio file
+                        if (file.type.startsWith('audio/')) {
+                            // Prevent adding duplicates by URL (simple check, not perfect for same content diff name)
+                            const objectURL = URL.createObjectURL(file);
+                            if (!userAddedTracks.some(track => track.url === objectURL)) { // Check if URL already exists
+                                userAddedTracks.push({ name: file.name, url: objectURL });
+
+                                // Add to the visual list
+                                const listItem = document.createElement('li');
+                                listItem.textContent = file.name;
+                                listItem.style.color = '#bdc3c7'; // Light grey text
+                                listItem.style.padding = '0.2rem 0';
+                                musicListUl.appendChild(listItem);
+                            } else {
+                                // console.log(`File ${file.name} (URL: ${objectURL}) already added.`);
+                                URL.revokeObjectURL(objectURL); // Revoke if it's a duplicate to free memory
+                            }
+                        } else {
+                            alert(`فایل ${file.name} یک فایل صوتی معتبر نیست و اضافه نشد.`);
+                        }
+                    }
+
+                    // If no track is currently loaded or playing, and new tracks were added, load the first one
+                    // or if the current track was the only one and now user adds more, ensure a valid track is loaded
+                    if ((!audioPlayer.src || audioPlayer.paused && audioPlayer.currentTime === 0) && getAllAvailableTracks().length > 0) {
+                        loadTrack(getRandomTrackIndex());
+                    }
+                }
+                // Clear the input value so that selecting the same file(s) again triggers change event
+                musicFileInput.value = ''; 
+            });
+
+            // Clean up object URLs when page unloads to prevent memory leaks
+            window.addEventListener('beforeunload', () => {
+                userAddedTracks.forEach(track => {
+                    URL.revokeObjectURL(track.url);
+                });
+            });
+
+
+            // --- Initial Setup on Load ---
+            initializeTimer(); // This also calls resetTimer and updateTimerDisplay
+            
+            // Initial music setup: load a track only if there are any available
+            if (getAllAvailableTracks().length > 0) {
+                loadTrack(getRandomTrackIndex());
+                pauseMusic(); // Still start paused
+            } else {
+                // If no default tracks and no user-added tracks initially, ensure player is empty
+                audioPlayer.src = '';
+                pauseMusic(); // Ensure music player is in a stopped state
+                // You might want to disable play buttons or show a message here
+            }
+
+            // This block is for initial setting of the button text on page load.
+            // It will default to "آغاز شب" because currentGameType is empty.
+            // The change for "ارتش سری" happens when the Secret Army game is started.
+            if (currentGameType === 'secret-army') { 
+                mainPlayPauseBtn.textContent = 'آغاز وضعیت اضطراری';
+            } else {
+                mainPlayPauseBtn.textContent = 'آغاز شب';
+            }
+
+
+            // Initial generation of Mafia galleries (default)
+            generateGallery('mafia-roles-gallery', mafiaRoles, 'multiple');
+            generateGallery('card-backs-gallery', cardBacks, 'single', ['images/Backs/B01.jpg']);
+            generateGallery('final-moves-gallery', finalMoves, 'multiple', [
+                'images/FinalMoves/Exit-01.jpg', 'images/FinalMoves/Exit-02.jpg', 'images/FinalMoves/Exit-03.jpg',
+                'images/FinalMoves/Exit-04.jpg', 'images/FinalMoves/Exit-05.jpg'
+            ]);
+
+            // Set default tab to 'home' by explicitly calling showContainer
+            showContainer('home-container'); // This should be called to show the initial container
+            setTabActive('home'); // Ensure 'خانه' tab is active
+        });
+    </script>
+</body>
+</html>
